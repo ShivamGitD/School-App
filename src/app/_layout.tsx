@@ -1,18 +1,35 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from "expo-router";
+import { Text, View } from "react-native";
+import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+import migrations from "../../drizzle/migrations";
+import { db } from "../db/client";
+import "../../global.css";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+export default function RootLayout() {
+  const { success, error } = useMigrations(db, migrations);
 
-SplashScreen.preventAutoHideAsync();
+  if (error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 16,
+        }}
+      >
+        <Text style={{ color: "red" }}>Migration error: {error.message}</Text>
+      </View>
+    );
+  }
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
-  );
+  if (!success) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Initializing database...</Text>
+      </View>
+    );
+  }
+
+  return <Stack />;
 }
