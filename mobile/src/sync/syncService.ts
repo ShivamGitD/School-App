@@ -269,10 +269,16 @@ export function startNetworkSyncListener(): () => void {
   return unsubscribe;
 }
 
-const unsubscribe = NetInfo.addEventListener((state) => {
-  const isOnline =
-    Boolean(state.isConnected) && state.isInternetReachable !== false;
-
-  console.log("NetInfo changed:", { isOnline, type: state.type });
-  // ...rest of function
-});
+export async function getPendingSyncCount(): Promise<number> {
+  const [pendingAtt, pendingMarks] = await Promise.all([
+    db
+      .select({ id: attendance.localId })
+      .from(attendance)
+      .where(eq(attendance.synced, false)),
+    db
+      .select({ id: examMarks.localId })
+      .from(examMarks)
+      .where(eq(examMarks.synced, false)),
+  ]);
+  return pendingAtt.length + pendingMarks.length;
+}

@@ -1,9 +1,25 @@
 import * as SecureStore from "expo-secure-store";
 
+interface TokenResponse {
+  access: string;
+  refresh: string;
+}
+
 const ACCESS_TOKEN_KEY = "school_app_jwt_access";
 
 // Set EXPO_PUBLIC_API_URL in your project root .env file (e.g., http://10.50.83.29:8000)
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http:127.0.0.1:8000";
+
+export async function loginWithDjango(
+  username: string,
+  password: string,
+): Promise<void> {
+  const data = await apiRequest<TokenResponse>("/api/token/", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+  await saveAuthToken(data.access);
+}
 
 export async function saveAuthToken(token: string): Promise<void> {
   await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
