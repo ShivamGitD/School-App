@@ -113,11 +113,18 @@ export default function ClassroomListScreen() {
         <Text className="text-xl font-bold text-slate-900">
           Classrooms ({classrooms.length})
         </Text>
-        <Link href="./marks" asChild>
-          <Pressable className="rounded-lg bg-indigo-600 px-3 py-1.5 active:bg-indigo-700">
-            <Text className="text-xs font-bold text-white">Exam Marks →</Text>
-          </Pressable>
-        </Link>
+        <View className="flex-row gap-2">
+          <Link href="./reports" asChild>
+            <Pressable className="rounded-lg bg-emerald-600 px-3 py-1.5 active:bg-emerald-700">
+              <Text className="text-xs font-bold text-white">Reports</Text>
+            </Pressable>
+          </Link>
+          <Link href="./marks" asChild>
+            <Pressable className="rounded-lg bg-indigo-600 px-3 py-1.5 active:bg-indigo-700">
+              <Text className="text-xs font-bold text-white">Exam Marks →</Text>
+            </Pressable>
+          </Link>
+        </View>
       </View>
 
       {classrooms.length === 0 ? (
