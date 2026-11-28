@@ -45,7 +45,7 @@ class ExamMarkPushItemSerializer(serializers.Serializer):
     subject = serializers.CharField(max_length=100)
     exam_name = serializers.CharField(max_length=100)
     marks_obtained = serializers.FloatField(min_value=0)
-    max_marks = serializers.FloatField(gt=0)
+    max_marks = serializers.FloatField(min_value=0)
     updated_at = serializers.DateTimeField()
 
     def validate(self, attrs):

@@ -1,15 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../client";
-import { classrooms, students } from "../schema";
+import { attendance, classrooms, examMarks, students } from "../schema";
 
 export type Classroom = typeof classrooms.$inferSelect;
 export type Student = typeof students.$inferSelect;
 
 export async function getAllClassrooms(): Promise<Classroom[]> {
-  return db
-    .select()
-    .from(classrooms)
-    .orderBy(asc(classrooms.name), asc(classrooms.section));
+  return db.select().from(classrooms);
 }
 
 export async function getStudentsByClassroom(
@@ -18,80 +15,28 @@ export async function getStudentsByClassroom(
   return db
     .select()
     .from(students)
-    .where(eq(students.classroomLocalId, classroomLocalId))
-    .orderBy(asc(students.rollNumber));
+    .where(eq(students.classroomLocalId, classroomLocalId));
 }
 
-export async function seedOfflineTestData(): Promise<boolean> {
-  const existing = await db.select().from(classrooms).limit(1);
-  if (existing.length > 0) return false;
+// Removes local dummy classrooms/students (remoteId = null) while preserving Django-synced data
+export async function purgeDummySeedData(): Promise<void> {
+  const dummyStudents = await db
+    .select({ localId: students.localId })
+    .from(students)
+    .where(isNull(students.remoteId));
 
-  const now = new Date().toISOString();
+  const dummyStudentIds = dummyStudents.map((s) => s.localId);
 
   await db.transaction(async (tx) => {
-    const [class10A, class10B] = await tx
-      .insert(classrooms)
-      .values([
-        {
-          name: "Class 10",
-          section: "A",
-          academicYear: "2026-27",
-          synced: true,
-          updatedAt: now,
-        },
-        {
-          name: "Class 10",
-          section: "B",
-          academicYear: "2026-27",
-          synced: true,
-          updatedAt: now,
-        },
-      ])
-      .returning();
-
-    await tx.insert(students).values([
-      {
-        classroomLocalId: class10A.localId,
-        rollNumber: "01",
-        fullName: "Aarav Sharma",
-        parentPhone: "9876543210",
-        synced: true,
-        updatedAt: now,
-      },
-      {
-        classroomLocalId: class10A.localId,
-        rollNumber: "02",
-        fullName: "Diya Verma",
-        parentPhone: "9876543211",
-        synced: true,
-        updatedAt: now,
-      },
-      {
-        classroomLocalId: class10A.localId,
-        rollNumber: "03",
-        fullName: "Kabir Singh",
-        parentPhone: "9876543212",
-        synced: true,
-        updatedAt: now,
-      },
-      {
-        classroomLocalId: class10B.localId,
-        rollNumber: "01",
-        fullName: "Meera Patel",
-        parentPhone: "9876543213",
-        synced: true,
-        updatedAt: now,
-      },
-      {
-        classroomLocalId: class10B.localId,
-        rollNumber: "02",
-        fullName: "Rohan Gupta",
-        parentPhone: "9876543214",
-        synced: true,
-        updatedAt: now,
-      },
-    ]);
+    if (dummyStudentIds.length > 0) {
+      await tx
+        .delete(attendance)
+        .where(inArray(attendance.studentLocalId, dummyStudentIds));
+      await tx
+        .delete(examMarks)
+        .where(inArray(examMarks.studentLocalId, dummyStudentIds));
+    }
+    await tx.delete(students).where(isNull(students.remoteId));
+    await tx.delete(classrooms).where(isNull(classrooms.remoteId));
   });
-
-  return true;
 }

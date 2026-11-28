@@ -45,7 +45,6 @@ export function SyncBar({ onSynced }: SyncBarProps) {
     setFeedback(null);
     try {
       const res = await syncNow();
-      await refreshState();
       if (res) {
         setFeedback(
           `Synced: ↓${res.pulledStudents} students, ↑${res.pushedAttendance + res.pushedMarks} records`,
@@ -55,6 +54,7 @@ export function SyncBar({ onSynced }: SyncBarProps) {
     } catch (err) {
       setFeedback(err instanceof Error ? err.message : "Sync failed");
     } finally {
+      await refreshState();
       setSyncing(false);
     }
   };
